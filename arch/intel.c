@@ -3,12 +3,12 @@
 
 typedef unsigned int uint;
 
-int intel_pclmul = 0;
-int intel_sse42= 0;
-int intel_sse41= 0;
-int intel_ssse3= 0;
-int intel_sse3= 0;
-int intel_sse2= 0;
+int arch_intel_pclmul = 0;
+int arch_intel_sse42= 0;
+int arch_intel_sse41= 0;
+int arch_intel_ssse3= 0;
+int arch_intel_sse3= 0;
+int arch_intel_sse2= 0;
 
 #ifdef LINUX
 #ifdef __x86_64__
