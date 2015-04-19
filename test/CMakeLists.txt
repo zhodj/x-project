@@ -1,0 +1,7 @@
+cmake_minimum_required (VERSION 2.8)
+project (test_glog_main)
+set (PROJECT_SRC_DIR "../src")
+include_directories("${PROJECT_SRC_DIR}/include")
+link_directories("${PROJECT_SRC_DIR}/lib")
+add_executable(test_glog_main test_glog_main.cc)
+target_link_libraries(test_glog_main glog gtest pthread)

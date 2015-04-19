@@ -1,8 +1,12 @@
 
 /* node_name -- logical name for a process in the network, e.g node1*/
+
+#define CLIENT_TYPE_ANDROID 0x01
+#define CLIENT_TYPE_PC      0x02
+
 struct node_name {
     __u8 type;
-    ___le32 number;
+    __le32 number;
 }__attribute__ ((packed));
 
 /* node_addr -- network address */
@@ -15,6 +19,12 @@ struct node_addr {
 struct node_inst {
     struct node_name name;
     struct node_addr addr;
+}__attribute__ ((packed));
+
+struct client_addr {
+    __le32 type;
+    __le32 id;                  /* client id */
+    struct sockaddr_storage cli_addr;
 }__attribute__ ((packed));
 
 
