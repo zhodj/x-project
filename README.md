@@ -1,2 +1,2 @@
 # x-project
-x-project open source
+scrapy clone project ( c++ open source )
