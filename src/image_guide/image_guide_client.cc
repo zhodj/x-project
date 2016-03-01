@@ -11,6 +11,9 @@
 #include <grpc++/create_channel.h>
 #include <grpc++/security/credentials.h>
 #include "image_guide.grpc.pb.h"
+#include "helper/common.h"
+
+#include <opencv2/opencv.hpp>
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -21,6 +24,9 @@ using grpc::Status;
 using imageguide::Image;
 using imageguide::ImageGuide;
 using imageguide::Response;
+using namespace helper::Common;
+using namespace cv;
+using namespace std;
 
 class imageGuideClient {
 public:
@@ -29,41 +35,63 @@ public:
         }
 
     void sendImage() {
-        Image image;
-        Response response;       
-        ClientContext context;    
-        const int kPoints = 10;   
+        Response response;
+        ClientContext context;
+        const int kPoints = 10;
         unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
 
         std::default_random_engine generator(seed);
         std::uniform_int_distribution<int> delay_distribution( 500, 1500);
 
         std::unique_ptr<ClientWriter<Image> > writer( stub_->SendImage(&context, &response));
-        if (!writer->Write(image)) {
+        if (!writer->Write(this->image)) {
             // Broken stream.
             return;
         }
         std::this_thread::sleep_for(std::chrono::milliseconds( delay_distribution(generator)));
-        writer->WritesDone();     
+        writer->WritesDone();
         Status status = writer->Finish();
         if (status.ok()) {
             std::cout << "Finished send image " << std::endl;
-        } else {                  
+        } else {
             std::cout << "Send Image rpc failed." << std::endl;
         }
     }
 
+    int readImage(const char* image_file)
+    {
+        Mat image = imread(image_file, IMREAD_COLOR);
+        if(!image.data)
+        {
+            std::cout << "Could not open or find the image" << std::endl;
+            return -1;
+        }
+        shared_ptr<char> bytes = nullptr;
+        this->matToBytes(image, bytes);
+        this->image.set_icon(bytes.get());
+        return 0;
+
+    }
+
+    void matToBytes(Mat image, shared_ptr<char>& bytes)
+    {
+        auto size = image.total() * image.elemSize();
+        std::shared_ptr<char> _bytes(new char[size], deleter_for_array<char>());
+        std::memcpy(_bytes.get(), image.data, size * sizeof(char));
+        bytes = _bytes;
+    }
+
 private:
     std::unique_ptr<ImageGuide::Stub> stub_;
+    Image image;
 };
 
 int main(int argc, char** argv) {
-    imageGuideClient guide(
-                           grpc::CreateChannel("localhost:50051",
-                                               grpc::InsecureChannelCredentials())
+    imageGuideClient guide( grpc::CreateChannel("localhost:50051", grpc::InsecureChannelCredentials())
                           );
 
     std::cout << "-------------- SendImage--------------" << std::endl;
+    guide.readImage(argv[1]);
     guide.sendImage();
 
     return 0;

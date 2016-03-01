@@ -36,6 +36,7 @@ public:
         {
             const std::string s = image.icon();
             const void* data = s.c_str();
+            std::cout << data << std::endl;
         }
         return Status::OK;
     }

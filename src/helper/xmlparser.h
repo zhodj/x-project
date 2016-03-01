@@ -17,9 +17,9 @@ namespace helper {
         {
             using namespace rapidxml;
         }
-        std::string getItem() {return item_;}
+        // std::string getItem() {return item_;}
     private:
         std::string m_xmlfile;
-    }
+    };
 }
 #endif
