@@ -66,19 +66,22 @@ public:
             std::cout << "Could not open or find the image" << std::endl;
             return -1;
         }
-        shared_ptr<char> bytes = nullptr;
-        this->matToBytes(image, bytes);
-        this->image.set_icon(bytes.get());
+        std::vector<uchar> buff;
+        this->matToBytes(image, buff);
+        std::string s(buff.begin(), buff.end());
+        this->image.set_icon(s);
         return 0;
 
     }
 
-    void matToBytes(Mat image, shared_ptr<char>& bytes)
+    void matToBytes(Mat image, vector<uchar>& buff)
     {
-        auto size = image.total() * image.elemSize();
-        std::shared_ptr<char> _bytes(new char[size], deleter_for_array<char>());
-        std::memcpy(_bytes.get(), image.data, size * sizeof(char));
-        bytes = _bytes;
+        std::cout << "Height: " << image.rows << " Width: " << image.cols << std::endl;
+        vector<int> param = vector<int>(2);
+        param[0] = CV_IMWRITE_JPEG_QUALITY;
+        param[1] = 95; // defualt(95) 0-100
+        imencode(".jpg", image, buff, param);
+        std::cout << "Coded file size(jpg): " << buff.size() << std::endl;
     }
 
 private:
@@ -87,9 +90,7 @@ private:
 };
 
 int main(int argc, char** argv) {
-    imageGuideClient guide( grpc::CreateChannel("localhost:50051", grpc::InsecureChannelCredentials())
-                          );
-
+    imageGuideClient guide( grpc::CreateChannel("localhost:50051", grpc::InsecureChannelCredentials())); 
     std::cout << "-------------- SendImage--------------" << std::endl;
     guide.readImage(argv[1]);
     guide.sendImage();
