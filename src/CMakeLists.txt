@@ -1,1 +1,2 @@
 ADD_SUBDIRECTORY(image_guide)
+ADD_SUBDIRECTORY(helper)

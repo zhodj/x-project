@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
+#include <boost/filesystem.hpp>
+#include <boost/date_time/local_time/local_time.hpp>
 
 #include <grpc/grpc.h>
 #include <grpc++/server.h>
@@ -16,6 +18,7 @@
 #include "image_guide.grpc.pb.h"
 #include "glog/logging.h"
 #include "helper/xmlparser.h"
+#include "helper/base64.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -27,6 +30,8 @@ using grpc::Status;
 using imageguide::Image;
 using imageguide::Response;
 using imageguide::ImageGuide;
+using namespace boost::posix_time;
+
 using namespace cv;
 
 class ImageGuideImpl final : public ImageGuide::Service {
@@ -38,8 +43,10 @@ public:
         Image image;
         while(reader->Read(&image))
         {
+            int id = image.id();
             const std::string s = image.icon();
             std::vector<uchar> vec_data(s.begin(), s.end());
+            
             std::cout << "Vector length: " << vec_data.size() << std::endl;
             Mat mat_image(imdecode(vec_data, 1));
             std::cout << "Height: " << mat_image.rows << " Width: " << mat_image.cols << std::endl;
@@ -49,7 +56,16 @@ public:
             compression_params[1] = 95;
 
             try{
-                imwrite("Lena_recv.jpg", mat_image, compression_params);
+                std::string now = to_simple_string(second_clock::local_time());
+                std::string image_folder = "./images/" + now;
+                bool is_create = boost::filesystem::create_directories(image_folder);
+                if(is_create)
+                {
+                    std::string image_name = "number" + ".jpg";
+                    imwrite(image_name, mat_image, compression_params);
+                }else
+                {
+                }
             }catch(std::runtime_error& ex)
             {
                 std::cout << "Exception converting image to JPG format: " << ex.what() << std::endl;

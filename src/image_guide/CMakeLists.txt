@@ -8,13 +8,16 @@ SET(GRPC_CPP_PLUGIN_PATH /usr/local/bin/grpc_cpp_plugin)
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 SET(OPCV opencv_core opencv_highgui opencv_features2d opencv_flann opencv_imgproc opencv_imgcodecs)
+SET(BOOST boost_filesystem boost_date_time)
+SET(GRPC grpc++_unsecure grpc gpr protobuf)
+SET(SYSTEM unwind  glog pthread dl)
 
 INCLUDE_DIRECTORIES(/usr/local/include ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/src)
 LINK_DIRECTORIES(/usr/local/lib ${PROJECT_SOURCE_DIR}/lib)
 ADD_EXECUTABlE(image_guide_server ${IMAGE_GUIDE_SERVER_SRC})
-TARGET_LINK_LIBRARIES(image_guide_server unwind grpc++_unsecure grpc gpr protobuf glog pthread dl ${OPCV})
-ADD_EXECUTABlE(image_guide_client ${IMAGE_GUIDE_CLIENT_SRC})
-TARGET_LINK_LIBRARIES(image_guide_client unwind grpc++_unsecure grpc gpr protobuf glog pthread dl ${OPCV})
+TARGET_LINK_LIBRARIES(image_guide_server ${SYSTEM} ${GRPC} ${OPCV} helper ${BOOST})
+# ADD_EXECUTABlE(image_guide_client ${IMAGE_GUIDE_CLIENT_SRC})
+# TARGET_LINK_LIBRARIES(image_guide_client unwind grpc++_unsecure grpc gpr protobuf glog pthread dl ${OPCV} helper)
 
 SET(PROTOS_FILE "grpc")  
 ADD_CUSTOM_COMMAND(OUTPUT  ${PROTOS_FILE}  
