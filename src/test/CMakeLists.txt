@@ -1,0 +1,2 @@
+SET(UNITTEST_SRC unittest.cc)
+ADD_EXECUTABlE(unittest ${UNITTEST_SRC})
