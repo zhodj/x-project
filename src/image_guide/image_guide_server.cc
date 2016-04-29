@@ -6,8 +6,10 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
+
 #include <boost/filesystem.hpp>
 #include <boost/date_time/local_time/local_time.hpp>
+#include <boost/format.hpp>
 
 #include <grpc/grpc.h>
 #include <grpc++/server.h>
@@ -17,7 +19,7 @@
 #include <opencv2/opencv.hpp>
 #include "image_guide.grpc.pb.h"
 #include "glog/logging.h"
-#include "helper/xmlparser.h"
+#include "helper/common.h"
 #include "helper/base64.h"
 
 using grpc::Server;
@@ -30,7 +32,7 @@ using grpc::Status;
 using imageguide::Image;
 using imageguide::Response;
 using imageguide::ImageGuide;
-using namespace boost::posix_time;
+using namespace helper::Common;
 
 using namespace cv;
 
@@ -56,12 +58,14 @@ public:
             compression_params[1] = 95;
 
             try{
-                std::string now = to_simple_string(second_clock::local_time());
+                std::string now =  getNowByFormat("%Y%m%d");
                 std::string image_folder = "./images/" + now;
                 bool is_create = boost::filesystem::create_directories(image_folder);
                 if(is_create)
                 {
-                    std::string image_name = "number" + ".jpg";
+                    std::string num = str(boost::format("%06d") % id);
+                    std::string suffix = ".jpg";
+                    std::string image_name = image_folder + "/" + "No." + num + suffix;
                     imwrite(image_name, mat_image, compression_params);
                 }else
                 {
