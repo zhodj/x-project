@@ -35,6 +35,7 @@ using imageguide::ImageGuide;
 using namespace helper::Common;
 
 using namespace cv;
+namespace bf = boost::filesystem;
 
 class ImageGuideImpl final : public ImageGuide::Service {
 public:
@@ -46,33 +47,43 @@ public:
         while(reader->Read(&image))
         {
             int id = image.id();
+            LOG(INFO) << "Receive id: " << id;
             const std::string s = image.icon();
             std::vector<uchar> vec_data(s.begin(), s.end());
             
-            std::cout << "Vector length: " << vec_data.size() << std::endl;
             Mat mat_image(imdecode(vec_data, 1));
-            std::cout << "Height: " << mat_image.rows << " Width: " << mat_image.cols << std::endl;
+            // LOG(INFO) << "Height: " << mat_image.rows << " Width: " << mat_image.cols;
 
             std::vector<int> compression_params = std::vector<int>(2);
             compression_params[0] = CV_IMWRITE_JPEG_QUALITY;
             compression_params[1] = 95;
 
             try{
-                std::string now =  getNowByFormat("%Y%m%d");
-                std::string image_folder = "./images/" + now;
-                bool is_create = boost::filesystem::create_directories(image_folder);
-                if(is_create)
+                std::string now_date =  getNowByFormat("%Y%m%d");
+                std::string image_folder = "./images/" + now_date;
+                bf::path path = image_folder;
+                if(!bf::exists(path))
+                {
+                    bool is_create = bf::create_directories(image_folder);
+                    if(is_create)
+                    {
+                        std::string num = str(boost::format("%06d") % id);
+                        std::string suffix = ".jpg";
+                        std::string image_name = image_folder + "/" + "No." + num + suffix;
+                        LOG(INFO) << "Writing image name: " << image_name;
+                        imwrite(image_name, mat_image, compression_params);
+                    }
+                }else
                 {
                     std::string num = str(boost::format("%06d") % id);
                     std::string suffix = ".jpg";
                     std::string image_name = image_folder + "/" + "No." + num + suffix;
+                    LOG(INFO) << "Writing image name: " << image_name;
                     imwrite(image_name, mat_image, compression_params);
-                }else
-                {
                 }
             }catch(std::runtime_error& ex)
             {
-                std::cout << "Exception converting image to JPG format: " << ex.what() << std::endl;
+                LOG(ERROR) << "Exception converting image to JPG format: " << ex.what();
                 return  Status::CANCELLED;
             }
         }
@@ -97,7 +108,6 @@ int main(int argc, char** argv) {
     google::InitGoogleLogging(argv[0]);
     FLAGS_log_dir = "./log";
 
-    // Expect only arg: --db_path=path/to/image_guide_db.json.
     RunServer();
 
     return 0;

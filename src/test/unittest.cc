@@ -1,16 +1,23 @@
-#include <boost/date_time/local_time/local_time.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <iostream>
+#include <sstream>
 using namespace boost::posix_time;
 
 std::string getNowByFormat(const std::string& format)
 {
-    boost::gregorian::date_facet *df = new boost::gregorian::date_facet(format.c_str());
-    std::ostringstream is;
-    is.imbue(std::locale(is.getloc(), df));
-    is << second_clock::local_time();
-    return is.str();
+    static std::locale loc(std::wcout.getloc(),
+                           new time_facet(format.c_str()));
+    std::basic_stringstream<char> wss;
+    wss.imbue(loc);
+    ptime now = second_clock::universal_time();
+    wss << now;
+    return wss.str();
 }
 
 int main()
 {
-    std::cout << getNowByFormat("%Y%m%d") << std::endl;
+    std::string ws = getNowByFormat("%Y%m%d");
+    std::cout << ws << std::endl;
+
+    return 0;
 }

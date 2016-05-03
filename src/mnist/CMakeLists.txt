@@ -1,0 +1,6 @@
+SET(MNIST_SRC read_mnist.cc)
+SET(OPCV opencv_core opencv_highgui opencv_features2d opencv_flann opencv_imgproc opencv_imgcodecs)
+INCLUDE_DIRECTORIES(/usr/local/include ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/src)
+LINK_DIRECTORIES(${PROJECT_SOURCE_DIR}/lib /usr/local/lib)
+ADD_EXECUTABlE(read_mnist ${MNIST_SRC})
+TARGET_LINK_LIBRARIES(read_mnist ${OPCV})
