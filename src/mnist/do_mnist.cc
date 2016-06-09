@@ -6,13 +6,42 @@
 #include <dirent.h>
 #include <string.h>
 #include <boost/algorithm/string.hpp>
+
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
 using namespace std;
 using namespace boost::algorithm;
+using namespace cv;
 
-char handle_filename(string& filename);
-void read_source_files(string& pathname, char* img_src, char* label_src)
+unsigned char handle_filename(string& filename);
+
+void intToBytes(vector<unsigned char> & arrayofByte, int paramInt)
+{
+   unsigned char c[4] = {0};
+   for(int i = 0; i < 4; i++) 
+   {
+       c[i] = (paramInt >> (i * 8));
+   }
+   arrayofByte.push_back(c[3]);
+   arrayofByte.push_back(c[2]);
+   arrayofByte.push_back(c[1]);
+   arrayofByte.push_back(c[0]);
+}
+
+void charToBytes(vector<unsigned char> & arrayofByte, unsigned char paramChar)
+{
+   unsigned char c[1] = {0};
+   for(int i = 0; i < 1; i++) 
+   {
+       c[i] = (paramChar >> (i * 8));
+   }
+   arrayofByte.push_back(c[1]);
+}
+
+void read_source_files(string& pathname)
 {
     int length = 0, length_label = 0;
+    int len = 0;
     struct dirent *ptr;
     DIR *dir = NULL;
     dir = opendir(pathname.c_str());
@@ -24,72 +53,71 @@ void read_source_files(string& pathname, char* img_src, char* label_src)
         else
             files.push_back(ptr->d_name);
     }
-    char * p = img_src;
-    char * q = label_src;
+    vector<unsigned char> train_bytes;
+    vector<unsigned char> label_bytes;
 
     int magic_number = 0x00000803;
     int magic_label_number = 0x00000801;
 
-    memcpy(p, &magic_number, sizeof(int));
-    p = p + sizeof(int);
+    intToBytes(train_bytes, magic_number);
     length = length + sizeof(int);
 
-
-    memcpy(q, &magic_label_number, sizeof(int));
-    q = q + sizeof(int);
+    intToBytes(label_bytes, magic_label_number);
     length_label = length_label + sizeof(int);
 
-    int image_numbers = 60000;
-    memcpy(p, &image_numbers, sizeof(int));
-    p = p + sizeof(int);
+
+    int image_numbers = 10000;
+    intToBytes(train_bytes, image_numbers);
     length = length + sizeof(int);
 
-    memcpy(q, &image_numbers, sizeof(int));
-    q = q + sizeof(int);
+    intToBytes(label_bytes, image_numbers);
     length_label = length_label + sizeof(int);
 
     int row_numbers = 28;
-    memcpy(p, &row_numbers, sizeof(int));
-    p = p + sizeof(int);
+    intToBytes(train_bytes, row_numbers);
     length = length + sizeof(int);
     int col_numbers = 28;
-    memcpy(p, &col_numbers, sizeof(int));
-    p = p + sizeof(int);
+    intToBytes(train_bytes, col_numbers);
     length = length + sizeof(int);
 
     for(size_t i = 0; i < files.size(); ++i)
     {
         string filepath = pathname + "/" + files[i];
-        char label =  handle_filename(files[i]);
-        ifstream binfile;
-        binfile.open(filepath.c_str(), ifstream::in|ifstream::binary);
-        while(binfile.good())
+        unsigned char label =  handle_filename(files[i]);
+        Mat image;
+        image = imread(filepath.c_str(), CV_LOAD_IMAGE_GRAYSCALE);
+        if(!image.data)
         {
-            char c = binfile.get();
-            memcpy(p, &c, sizeof(char));
-            p = p + sizeof(char);
-            length = length + sizeof(char);
+            cout << "Could not open or find the image" << endl;
+            return ;
+        }else
+        {
+            for(int i = 0; i < image.rows; i++)
+                for(int j = 0; j < image.cols; j++)
+                {
+                    charToBytes(train_bytes, image.at<uchar>(i,j));
+                    length = length + sizeof(unsigned char);
+                }
         }
-        binfile.close();
 
-        memcpy(q, &label, sizeof(char));
-        q = q + sizeof(char);
-        length_label = length_label + sizeof(char);
+        charToBytes(label_bytes, label);
+        length_label = length_label + sizeof(unsigned char);
     }
     closedir(dir);
 
-    ofstream outfile("train-images-idx3-ubyte", ofstream::binary);
-    copy(img_src, img_src + length, ostream_iterator<char>(outfile));
+    ofstream outfile("t10k-images-idx3-ubyte", ofstream::binary);
+    copy(train_bytes.begin(),  train_bytes.end(), ostream_iterator<char>(outfile));
     outfile.close();
 
-
-    ofstream outlabel("train-labels-idx1-ubyte", ofstream::binary);
-    copy(label_src, label_src + length_label, ostream_iterator<char>(outlabel));
+    ofstream outlabel("t10k-labels-idx1-ubyte", ofstream::binary);
+    copy(label_bytes.begin(), label_bytes.end(), ostream_iterator<char>(outlabel));
     outlabel.close();
+
+    cout << "length: " << length << endl << "length_label: " << length_label << endl;
     
 }
 
-char handle_filename(string& filename)
+unsigned char handle_filename(string& filename)
 {
     vector<string> strVec;
     split(strVec, filename, is_any_of("."));
@@ -97,17 +125,13 @@ char handle_filename(string& filename)
     strVec.clear();
     split(strVec, name_prefix, is_any_of("_"));
     string number = strVec[0];
-    char i = std::stoi(number);
+    unsigned char i = std::stoi(number);
 
     return i;
 }
 
 int main()
 {
-    string pathname = "/home/fangfang/Workspace/scripts/train_numbers/";
-    char * img_src = new char[1024 * 1024 * 60];
-    char * label_src = new char[1024 * 1024 * 60];
-    read_source_files(pathname, img_src, label_src);
-    delete[] img_src;
-    delete[] label_src;
+    string pathname = "/home/zhoudingjun/workstation/scripts/python/test_numbers/";
+    read_source_files(pathname);
 }
